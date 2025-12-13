@@ -1,7 +1,6 @@
 import pyopenms as poms
 import json
 import shutil
-import streamlit as st
 from pathlib import Path
 
 class ParameterManager:
@@ -31,6 +30,7 @@ class ParameterManager:
         It handles both general parameters and parameters specific to TOPP tools,
         ensuring that only non-default values are stored.
         """
+        import streamlit as st
         # Everything in session state which begins with self.param_prefix is saved to a json file
         json_params = {
             k.replace(self.param_prefix, ""): v
@@ -95,7 +95,6 @@ class ParameterManager:
                 with open(self.params_file, "r", encoding="utf-8") as f:
                     return json.load(f)
             except:
-                st.error("**ERROR**: Attempting to load an invalid JSON parameter file. Reset to defaults.")
                 return {}
 
     def reset_to_default_parameters(self) -> None:

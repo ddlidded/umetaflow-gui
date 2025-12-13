@@ -229,6 +229,7 @@ class CommandExecutor:
                                 The '.py' extension is appended if not present.
             input_output (dict, optional): A dictionary specifying the input/output parameter names (as key) and their corresponding file paths (as value). Defaults to {}.
         """
+        python_executable = sys.executable or "python3"
         # Check if script file exists (can be specified without path and extension)
         # default location: src/python-tools/script_file
         if not script_file.endswith(".py"):
@@ -249,7 +250,7 @@ class CommandExecutor:
         if defaults is None:
             self.logger.log(f"WARNING: No DEFAULTS found in {path.name}")
             # run command without params
-            self.run_command(["python", str(path)])
+            self.run_command([python_executable, str(path)])
         elif isinstance(defaults, list):
             defaults = {entry["key"]: entry["value"] for entry in defaults}
             # load paramters from JSON file
@@ -264,6 +265,6 @@ class CommandExecutor:
             with open(tmp_params_file, "w", encoding="utf-8") as f:
                 json.dump(defaults, f, indent=4)
             # run command
-            self.run_command(["python", str(path), str(tmp_params_file)])
+            self.run_command([python_executable, str(path), str(tmp_params_file)])
             # remove tmp params file
             tmp_params_file.unlink()

@@ -2,26 +2,28 @@ from pathlib import Path
 from .Logger import Logger
 from .ParameterManager import ParameterManager
 from .CommandExecutor import CommandExecutor
-from .StreamlitUI import StreamlitUI
 from .FileManager import FileManager
 import multiprocessing
-import streamlit as st
 import shutil
 import time
 
 class WorkflowManager:
     # Core workflow logic using the above classes
-    def __init__(self, name: str, workspace: str):
+    def __init__(self, name: str, workspace: str, enable_ui: bool = True):
         self.name = name
+        self.enable_ui = enable_ui
         self.workflow_dir = Path(workspace, name.replace(" ", "-").lower())
         self.file_manager = FileManager(self.workflow_dir)
         self.logger = Logger(self.workflow_dir)
         self.parameter_manager = ParameterManager(self.workflow_dir)
         self.executor = CommandExecutor(self.workflow_dir, self.logger, self.parameter_manager)
-        self.ui = StreamlitUI(self.workflow_dir, self.logger, self.executor, self.parameter_manager)
+        self.ui = None
+        if self.enable_ui:
+            from .StreamlitUI import StreamlitUI
+            self.ui = StreamlitUI(self.workflow_dir, self.logger, self.executor, self.parameter_manager)
         self.params = self.parameter_manager.get_parameters_from_json()
 
-    def start_workflow(self) -> None:
+    def start_workflow(self, rerun: bool = True) -> None:
         """
         Starts the workflow process and adds its process id to the pid directory.
         The workflow itself needs to be a process, otherwise streamlit will wait for everything to finish before updating the UI again.
@@ -34,7 +36,9 @@ class WorkflowManager:
         # Add workflow process id to pid dir
         self.executor.pid_dir.mkdir()
         Path(self.executor.pid_dir, str(workflow_process.pid)).touch()
-        st.rerun()
+        if rerun and self.enable_ui:
+            import streamlit as st
+            st.rerun()
 
     def workflow_process(self) -> None:
         """
@@ -57,24 +61,32 @@ class WorkflowManager:
         """
         Shows the file upload section of the UI with content defined in self.upload().
         """
+        if not self.ui:
+            raise RuntimeError("UI is disabled for this workflow manager instance.")
         self.ui.file_upload_section(self.upload)
         
     def show_parameter_section(self) -> None:
         """
         Shows the parameter section of the UI with content defined in self.configure().
         """
+        if not self.ui:
+            raise RuntimeError("UI is disabled for this workflow manager instance.")
         self.ui.parameter_section(self.configure)
 
     def show_execution_section(self) -> None:
         """
         Shows the execution section of the UI with content defined in self.execution().
         """
+        if not self.ui:
+            raise RuntimeError("UI is disabled for this workflow manager instance.")
         self.ui.execution_section(self.start_workflow)
         
     def show_results_section(self) -> None:
         """
         Shows the results section of the UI with content defined in self.results().
         """
+        if not self.ui:
+            raise RuntimeError("UI is disabled for this workflow manager instance.")
         self.ui.results_section(self.results)
 
     def upload(self) -> None:
