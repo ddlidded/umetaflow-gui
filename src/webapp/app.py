@@ -68,10 +68,7 @@ def upload_page(request: Request):
     ws_dir = get_workspace_dir(paths, ws_id)
     mzml_dir = ws_dir / "mzML-files"
     df_path = ws_dir / "mzML-files.tsv"
-    df = update_mzml_df(df_path, mzml_dir)
-    # persist the updated df (adds newly uploaded files)
-    df.to_csv(df_path, sep="\t", index=False)
-    files = df.to_dict(orient="records")
+    files = update_mzml_df(df_path, mzml_dir)
 
     response = templates.TemplateResponse(
         "upload.html",
@@ -98,8 +95,7 @@ async def upload_mzml(request: Request, files: list[UploadFile] = File(default=[
 
     # update selection table
     df_path = ws_dir / "mzML-files.tsv"
-    df = update_mzml_df(df_path, mzml_dir)
-    df.to_csv(df_path, sep="\t", index=False)
+    update_mzml_df(df_path, mzml_dir)
 
     return JSONResponse({"ok": True, "saved": saved})
 

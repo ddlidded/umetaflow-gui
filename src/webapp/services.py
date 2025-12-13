@@ -1,11 +1,10 @@
 from __future__ import annotations
 
+import csv
 import uuid
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, Optional
-
-import pandas as pd
 
 
 @dataclass(frozen=True)
@@ -56,36 +55,54 @@ def list_mzml_files(workspace_dir: Path) -> list[str]:
     return sorted([p.name for p in mzml_dir.iterdir() if p.is_file() and p.suffix.lower() == ".mzml"])
 
 
-def update_mzml_df(df_path: Path, mzml_dir: Path) -> pd.DataFrame:
+def _read_tsv_rows(path: Path) -> list[dict]:
+    if not path.exists():
+        return []
+    with open(path, "r", encoding="utf-8", newline="") as f:
+        reader = csv.DictReader(f, delimiter="\t")
+        return list(reader)
+
+
+def _write_tsv_rows(path: Path, rows: list[dict], fieldnames: list[str]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "w", encoding="utf-8", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames, delimiter="\t")
+        writer.writeheader()
+        for r in rows:
+            writer.writerow(r)
+
+
+def update_mzml_df(df_path: Path, mzml_dir: Path) -> list[dict]:
     """
     Mirror of the Streamlit helper, but headless (no Streamlit dependency).
     """
-    if not df_path.exists():
-        files = [f.name for f in mzml_dir.iterdir() if f.is_file()]
-        df = pd.DataFrame({"file name": files, "use in workflows": [True] * len(files)})
-    else:
-        df = pd.read_csv(df_path, sep="\t")
-        current_files = set(f.name for f in mzml_dir.iterdir() if f.is_file())
-        df = df[df["file name"].isin(current_files)]
-        existing_files = set(df["file name"])
-        new_files = [
-            f.name
-            for f in mzml_dir.iterdir()
-            if f.is_file() and f.suffix.lower() == ".mzml" and f.name not in existing_files
-        ]
-        if new_files:
-            new_df = pd.DataFrame({"file name": new_files, "use in workflows": [True] * len(new_files)})
-            df = pd.concat([df, new_df])
-    return df.sort_values(by="file name").reset_index(drop=True)
+    current_files = sorted([f.name for f in mzml_dir.iterdir() if f.is_file() and f.suffix.lower() == ".mzml"])
+
+    existing_rows = _read_tsv_rows(df_path)
+    existing_map: dict[str, bool] = {}
+    for r in existing_rows:
+        fn = r.get("file name", "")
+        if not fn:
+            continue
+        existing_map[fn] = str(r.get("use in workflows", "True")).lower() in ("true", "1", "yes", "y", "on")
+
+    rows: list[dict] = []
+    for fn in current_files:
+        rows.append({"file name": fn, "use in workflows": existing_map.get(fn, True)})
+
+    rows.sort(key=lambda r: r["file name"])
+    _write_tsv_rows(df_path, rows, fieldnames=["file name", "use in workflows"])
+    return rows
 
 
 def write_mzml_selection(df_path: Path, mzml_dir: Path, selected_files: Iterable[str]) -> None:
     files = [p.name for p in mzml_dir.iterdir() if p.is_file() and p.suffix.lower() == ".mzml"]
     selected_set = set(selected_files)
-    df = pd.DataFrame(
-        {"file name": sorted(files), "use in workflows": [f in selected_set for f in sorted(files)]}
-    )
-    df.to_csv(df_path, sep="\t", index=False)
+    rows = [
+        {"file name": f, "use in workflows": (f in selected_set)}
+        for f in sorted(files)
+    ]
+    _write_tsv_rows(df_path, rows, fieldnames=["file name", "use in workflows"])
 
 
 def save_uploaded_files(workspace_dir: Path, uploads: Iterable[tuple[str, bytes]]) -> list[str]:
