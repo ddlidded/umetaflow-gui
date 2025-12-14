@@ -38,7 +38,19 @@ def ensure_processing_dependencies(workspace_dir: Path) -> None:
     """
     wf_dir = workspace_dir / "umetaflow"
 
+    def ensure_pip() -> None:
+        # In packaged apps, pip may not be present. Try ensurepip first.
+        rc, out = _run([sys.executable, "-m", "pip", "--version"])
+        if rc == 0:
+            return
+        _log_to_workflow(wf_dir, f"[deps] pip not available, attempting ensurepip…\n{out}")
+        rc, out = _run([sys.executable, "-m", "ensurepip", "--upgrade"])
+        _log_to_workflow(wf_dir, f"[deps] ensurepip --upgrade\n{out}")
+        if rc != 0:
+            raise RuntimeError("pip is not available and ensurepip failed.")
+
     def pip_install(pkgs: list[str]) -> None:
+        ensure_pip()
         cmd = [sys.executable, "-m", "pip", "install", "--no-cache-dir", *pkgs]
         rc, out = _run(cmd)
         _log_to_workflow(wf_dir, f"[deps] pip {' '.join(pkgs)}\n{out}")

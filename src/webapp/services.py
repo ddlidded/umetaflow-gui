@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import csv
+import os
+import sys
 import uuid
 from dataclasses import dataclass
 from pathlib import Path
@@ -14,8 +16,30 @@ class AppPaths:
 
 
 def get_repo_root() -> Path:
-    # src/webapp/services.py -> repo root is 2 parents up: /workspace
+    # In dev: src/webapp/services.py -> repo root is 2 parents up.
+    # In PyInstaller: resources are unpacked into sys._MEIPASS.
+    meipass = getattr(sys, "_MEIPASS", None)
+    if meipass:
+        return Path(meipass).resolve()
     return Path(__file__).resolve().parents[2]
+
+
+def get_app_data_dir(app_name: str) -> Path:
+    """
+    Return a writable per-user app data directory.
+    - macOS: ~/Library/Application Support/<app_name>
+    - Linux: ~/.local/share/<app_name>
+    - Windows: %APPDATA%\\<app_name> (best-effort)
+    """
+    home = Path.home()
+    if sys.platform == "darwin":
+        return home / "Library" / "Application Support" / app_name
+    if sys.platform.startswith("win"):
+        appdata = os.environ.get("APPDATA")
+        if appdata:
+            return Path(appdata) / app_name
+        return home / "AppData" / "Roaming" / app_name
+    return home / ".local" / "share" / app_name
 
 
 def load_settings(repo_root: Path) -> dict:
@@ -29,10 +53,14 @@ def load_settings(repo_root: Path) -> dict:
 def get_paths() -> AppPaths:
     repo_root = get_repo_root()
     settings = load_settings(repo_root)
-    # Use a writable location by default (inside the repo root).
-    # The previous Streamlit implementation used a parent directory, which may not
-    # be writable in some deployments (e.g., sandboxed environments).
-    workspaces_dir = (repo_root / f"workspaces-{settings['repository-name']}").resolve()
+    # Use a writable location.
+    # - Dev: inside repo root
+    # - Packaged (PyInstaller): inside user app data (persistent across runs)
+    if getattr(sys, "_MEIPASS", None):
+        base = get_app_data_dir(settings.get("app-name", "UmetaFlow"))
+        workspaces_dir = (base / f"workspaces-{settings['repository-name']}").resolve()
+    else:
+        workspaces_dir = (repo_root / f"workspaces-{settings['repository-name']}").resolve()
     workspaces_dir.mkdir(parents=True, exist_ok=True)
     return AppPaths(repo_root=repo_root, workspaces_dir=workspaces_dir)
 
