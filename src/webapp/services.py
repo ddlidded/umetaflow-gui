@@ -176,3 +176,75 @@ def pid_file_paths(workflow_dir: Path) -> list[Path]:
 def workflow_is_running(workflow_dir: Path) -> bool:
     return len(pid_file_paths(workflow_dir)) > 0
 
+
+def expert_flag_path(workspace_dir: Path) -> Path:
+    return workspace_dir / "umetaflow-expert-flag.txt"
+
+
+def is_expert_mode(workspace_dir: Path) -> bool:
+    return expert_flag_path(workspace_dir).exists()
+
+
+def read_simple_params(workspace_dir: Path) -> dict:
+    import json
+    params_path = workspace_dir / "umetaflow" / "params.json"
+    defaults = {
+        # Basic parameters
+        "ion_mode": "positive",
+        "mz_tolerance": 10.0,
+        "RT_tolerance": 30.0,
+        "num_threads": 1,
+        
+        # FeatureFinderMetabo parameters
+        "ffm:algorithm:common:noise_threshold_int": 1000.0,
+        "ffm:algorithm:common:chrom_peak_snr": 3.0,
+        "ffm:algorithm:common:chrom_fwhm": 5.0,
+        "ffm:algorithm:ffm:remove_single_traces": "true",
+        
+        # Adduct detection
+        "adduct-detection": False,
+        "adducts_pos": "H:+:0.6 Na:+:0.1 NH4:+:0.1 H-1O-1:+:0.1 H-3O-2:+:0.1",
+        "adducts_neg": "H-1:-:1 H-2O-1:0:0.05 CH2O2:0:0.5",
+        
+        # Advanced parameters for expert mode
+        "correct-precursor": True,
+        "re-quantify": True,
+        "run-ms2query": False,
+        "run-sirius": False,
+        "sirius-path": "",
+        "generate-gnps": False,
+        "generate-iimn": False,
+        
+        # MapAligner parameters
+        "ma:algorithm:common:max_number_of_peaks_considered": 200000,
+        "ma:algorithm:common:max_rt_shift": 30.0,
+        "ma:algorithm:common:rt_tolerance": 30.0,
+        
+        # FeatureLinker parameters
+        "fl:algorithm:common:rt_tolerance": 30.0,
+        "fl:algorithm:common:mz_tolerance": 10.0,
+        "fl:algorithm:common:mz_unit": "ppm",
+        
+        # MetaboliteAdductDecharger parameters
+        "mad:algorithm:common:charge_min": 1,
+        "mad:algorithm:common:charge_max": 3,
+        "mad:algorithm:common:rt_tolerance": 30.0,
+        "mad:algorithm:common:mz_tolerance": 10.0,
+        "mad:algorithm:common:mz_unit": "ppm",
+    }
+    if params_path.exists():
+        try:
+            with open(params_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            return {**defaults, **data}
+        except Exception:
+            return defaults.copy()
+    return defaults.copy()
+
+
+def write_simple_params(workspace_dir: Path, params: dict) -> None:
+    import json
+    path = workspace_dir / "umetaflow" / "params.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(params, f, indent=2)

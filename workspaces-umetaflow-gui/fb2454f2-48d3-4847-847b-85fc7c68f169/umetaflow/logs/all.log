@@ -1,0 +1,27 @@
+[deps] Checking processing dependencies…
+
+[deps] Missing: ms2query. Attempting install…
+
+[deps] pip ms2query==1.5.3
+Collecting ms2query==1.5.3
+  Downloading ms2query-1.5.3-py3-none-any.whl.metadata (24 kB)
+INFO: pip is looking at multiple versions of ms2query to determine which version is compatible with other requirements. This could take a while.
+
+ERROR: Ignored the following versions that require a different python version: 0.21.2 Requires-Python >=3.8,<3.13; 0.22.0 Requires-Python >=3.8,<3.13; 0.23.1 Requires-Python >=3.8,<3.13; 0.24.0 Requires-Python >=3.8,<3.13; 0.24.1 Requires-Python >=3.8,<3.13; 0.24.2 Requires-Python >=3.8,<3.13; 0.24.3 Requires-Python >=3.8,<3.13; 0.24.4 Requires-Python >=3.8,<3.13; 0.25.0 Requires-Python >=3.8,<3.12; 0.26.0 Requires-Python >=3.8,<3.12; 0.26.1 Requires-Python >=3.8,<3.12; 0.26.2 Requires-Python >=3.8,<3.12; 0.26.3 Requires-Python >=3.8,<3.12; 0.26.4 Requires-Python >=3.8,<3.12; 0.27.0 Requires-Python >=3.9,<3.13; 0.28.1 Requires-Python >=3.10,<3.13; 0.28.2 Requires-Python >=3.10,<3.13; 0.29.0 Requires-Python >=3.10,<3.13
+ERROR: Could not find a version that satisfies the requirement matchms<=0.26.4,>=0.24.0 (from ms2query) (from versions: 0.6.0, 0.6.1, 0.6.2, 0.7.0, 0.8.0, 0.8.1, 0.8.2, 0.9.0, 0.9.1, 0.9.2, 0.10.0, 0.11.0, 0.12.0, 0.13.0, 0.14.0, 0.15.0, 0.16.0, 0.17.0, 0.18.0, 0.19.0, 0.20.0, 0.21.0, 0.21.1, 0.30.0, 0.30.1, 0.30.2, 0.31.0)
+ERROR: No matching distribution found for matchms<=0.26.4,>=0.24.0
+
+ERROR: Failed to start/run UmetaFlow (headless).
+
+Traceback (most recent call last):
+  File "/Users/eddykapelczak/Documents/GitHub/umetaflow-gui/src/webapp/workflow_runner.py", line 133, in _run_umetaflow
+    ensure_processing_dependencies(Path(workspace_dir))
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/eddykapelczak/Documents/GitHub/umetaflow-gui/src/webapp/workflow_runner.py", line 86, in ensure_processing_dependencies
+    pip_install(["ms2query==1.5.3"])
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/eddykapelczak/Documents/GitHub/umetaflow-gui/src/webapp/workflow_runner.py", line 58, in pip_install
+    raise RuntimeError(f"pip install failed for: {pkgs}")
+RuntimeError: pip install failed for: ['ms2query==1.5.3']
+
+

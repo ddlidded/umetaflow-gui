@@ -1,0 +1,22 @@
+[deps] Checking processing dependencies…
+
+[deps] Missing: pyopenms. Attempting install…
+
+[deps] pip pyopenms==3.2
+ERROR: Could not find a version that satisfies the requirement pyopenms==3.2 (from versions: 3.4.0, 3.5.0)
+ERROR: No matching distribution found for pyopenms==3.2
+
+ERROR: Failed to start/run UmetaFlow (headless).
+
+Traceback (most recent call last):
+  File "/Users/eddykapelczak/Documents/GitHub/umetaflow-gui/src/webapp/workflow_runner.py", line 133, in _run_umetaflow
+    ensure_processing_dependencies(Path(workspace_dir))
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/eddykapelczak/Documents/GitHub/umetaflow-gui/src/webapp/workflow_runner.py", line 77, in ensure_processing_dependencies
+    pip_install(["pyopenms==3.2"])
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "/Users/eddykapelczak/Documents/GitHub/umetaflow-gui/src/webapp/workflow_runner.py", line 58, in pip_install
+    raise RuntimeError(f"pip install failed for: {pkgs}")
+RuntimeError: pip install failed for: ['pyopenms==3.2']
+
+

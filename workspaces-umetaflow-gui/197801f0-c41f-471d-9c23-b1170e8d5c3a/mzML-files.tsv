@@ -1,0 +1,5 @@
+file name	use in workflows
+Blank.mzML	True
+Control.mzML	True
+Pool.mzML	True
+Treatment.mzML	True

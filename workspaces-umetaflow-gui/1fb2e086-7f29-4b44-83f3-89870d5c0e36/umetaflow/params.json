@@ -1,0 +1,13 @@
+{
+  "ion_mode": "positive",
+  "mz_tolerance": 10.0,
+  "RT_tolerance": 30.0,
+  "num_threads": 1,
+  "ffm:algorithm:common:noise_threshold_int": 1000.0,
+  "ffm:algorithm:common:chrom_peak_snr": 3.0,
+  "ffm:algorithm:common:chrom_fwhm": 5.0,
+  "ffm:algorithm:ffm:remove_single_traces": "true",
+  "adduct-detection": false,
+  "adducts_pos": "",
+  "adducts_neg": ""
+}

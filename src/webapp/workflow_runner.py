@@ -74,12 +74,12 @@ def ensure_processing_dependencies(workspace_dir: Path) -> None:
     # Python packages (best-effort; compiled wheels may not exist for this Python/OS)
     if not have_import("pyopenms"):
         _log_to_workflow(wf_dir, "[deps] Missing: pyopenms. Attempting install…")
-        pip_install(["pyopenms==3.2"])
+        pip_install(["pyopenms==3.5.0"])
 
     # rdkit is used by parts of the pipeline (optional depending on features used)
     if not have_import("rdkit"):
         _log_to_workflow(wf_dir, "[deps] Missing: rdkit. Attempting install…")
-        pip_install(["rdkit==2023.9.4"])
+        pip_install(["rdkit==2024.9.6"])
 
     if not have_import("ms2query"):
         _log_to_workflow(wf_dir, "[deps] Missing: ms2query. Attempting install…")
