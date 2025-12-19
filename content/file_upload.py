@@ -7,7 +7,11 @@ from src.fileupload import *
 
 params = page_setup()
 
-st.title("mzML Files")
+page_header(
+    "File Upload",
+    "Add `mzML` files to your workspace (upload, example data, or local directory).",
+    badges=[f"Workspace: {Path(st.session_state.workspace).name}"],
+)
 df_path = Path(st.session_state.workspace, "mzML-files.tsv")
 mzML_dir = Path(st.session_state.workspace, "mzML-files")
 
@@ -20,53 +24,73 @@ elif st.session_state.location == "online":
 tabs = st.tabs(tabs)
 
 with tabs[0]:
-    with st.form("mzML-upload", clear_on_submit=True):
-        files = st.file_uploader(
-            "mzML files", accept_multiple_files=True)
-        _, c2, _ = st.columns(3)
-        if c2.form_submit_button("Add files to workspace", use_container_width=True, type="primary"):
-            if files:
-                save_uploaded_mzML(files)
-                update_mzML_df(df_path, mzML_dir).to_csv(df_path, sep="\t", index=False)
-                st.rerun()
-            else:
-                st.error("Nothing to add, please upload file.")
+    with st.container(border=True):
+        st.markdown("### Upload `mzML` files")
+        with st.form("mzML-upload", clear_on_submit=True):
+            files = st.file_uploader("mzML files", accept_multiple_files=True)
+            _, c2, _ = st.columns(3)
+            if c2.form_submit_button(
+                "Add files to workspace", use_container_width=True, type="primary"
+            ):
+                if files:
+                    save_uploaded_mzML(files)
+                    update_mzML_df(df_path, mzML_dir).to_csv(
+                        df_path, sep="\t", index=False
+                    )
+                    st.rerun()
+                else:
+                    st.error("Nothing to add, please upload file.")
 
 # Example mzML files
 with tabs[1]:
-    st.markdown("Example data set of bacterial cytosolic fractions. Bacillus subtilis cultures were treated with the antibiotic fosfomycin, which inhibits a step in the biosynthesis of petidoglycan (bacterial cell wall). The major accumulation product is UDP-GlcNAc [M+H]+ = 608.088 m/z.")
-    _, c2, _ = st.columns(3)
-    if c2.button("Load Example Data", type="primary", use_container_width=True):
-        load_example_mzML_files()
-        update_mzML_df(df_path, mzML_dir).to_csv(df_path, sep="\t", index=False)
-        st.rerun()
+    with st.container(border=True):
+        st.markdown("### Example dataset")
+        st.markdown(
+            "Example data set of bacterial cytosolic fractions. *Bacillus subtilis* cultures were treated with the antibiotic fosfomycin, which inhibits a step in peptidoglycan biosynthesis. The major accumulation product is UDP-GlcNAc [M+H]+ = 608.088 m/z."
+        )
+        _, c2, _ = st.columns(3)
+        if c2.button("Load Example Data", type="primary", use_container_width=True):
+            load_example_mzML_files()
+            update_mzML_df(df_path, mzML_dir).to_csv(df_path, sep="\t", index=False)
+            st.rerun()
 
 # Local file upload option: via directory path
 if st.session_state.location == "local":
     with tabs[2]:
-        # with st.form("local-file-upload"):
-        local_mzML_dir = st.text_input(
-            "path to folder with mzML files")
-        # raw string for file paths
-        local_mzML_dir = r"{}".format(local_mzML_dir)
-        _, c2, _ = st.columns(3)
-        if c2.button("Copy files to workspace", type="primary", use_container_width=True, disabled=(local_mzML_dir == "")):
-            copy_local_mzML_files_from_directory(local_mzML_dir)
-            update_mzML_df(df_path, mzML_dir).to_csv(df_path, sep="\t", index=False)
-            st.rerun()
+        with st.container(border=True):
+            st.markdown("### Add from local directory")
+            local_mzML_dir = st.text_input("path to folder with mzML files")
+            # raw string for file paths
+            local_mzML_dir = r"{}".format(local_mzML_dir)
+            _, c2, _ = st.columns(3)
+            if c2.button(
+                "Copy files to workspace",
+                type="primary",
+                use_container_width=True,
+                disabled=(local_mzML_dir == ""),
+            ):
+                copy_local_mzML_files_from_directory(local_mzML_dir)
+                update_mzML_df(df_path, mzML_dir).to_csv(
+                    df_path, sep="\t", index=False
+                )
+                st.rerun()
 elif st.session_state.location == "online":
     with tabs[2]:
-        c1, c2 = st.columns(2)
-        if c1.button("Get all mzML files in workspace as zip file.", use_container_width=True):
-            zip_buffer = zip_files(Path(st.session_state.workspace, "mzML-files"))
-            c2.download_button(
-                label="⬇️ Download Now",
-                data=zip_buffer,
-                file_name=f"mzML_files-{Path(st.session_state.workspace).stem}.zip",
-                mime="application/zip",
-                type="primary",
-                use_container_width=True
-            )
+        with st.container(border=True):
+            st.markdown("### Download workspace data")
+            c1, c2 = st.columns(2)
+            if c1.button(
+                "Get all mzML files in workspace as zip file.", use_container_width=True
+            ):
+                zip_buffer = zip_files(Path(st.session_state.workspace, "mzML-files"))
+                c2.download_button(
+                    label="⬇️ Download Now",
+                    data=zip_buffer,
+                    file_name=f"mzML_files-{Path(st.session_state.workspace).stem}.zip",
+                    mime="application/zip",
+                    type="primary",
+                    use_container_width=True,
+                )
 
 
 df = update_mzML_df(df_path, mzML_dir)
@@ -81,19 +105,23 @@ def file_selection_section():
         edited.to_csv(df_path, sep="\t", index=False)
 
 if any(Path(mzML_dir).iterdir()):
-    file_selection_section()
-    # Remove files
-    with st.form("remove-mzML-files"):
-        st.markdown("🗑️ Remove mzML files")
-        to_remove = st.multiselect("select mzML files",
-                                options=[f.stem for f in sorted(mzML_dir.iterdir())])
-        c1, c2 = st.columns(2)
-        if c2.form_submit_button("Remove **selected**", use_container_width=True):
-            remove_selected_mzML_files(to_remove, params)
-            update_mzML_df(df_path, mzML_dir).to_csv(df_path, sep="\t", index=False)
-            st.rerun()
+    with st.container(border=True):
+        st.markdown("### Select files for analysis")
+        file_selection_section()
 
-        if c1.form_submit_button("⚠️ Remove **all**", use_container_width=True):
-            remove_all_mzML_files(params)
-            update_mzML_df(df_path, mzML_dir).to_csv(df_path, sep="\t", index=False)
-            st.rerun()
+    with st.container(border=True):
+        st.markdown("### Remove files")
+        with st.form("remove-mzML-files"):
+            to_remove = st.multiselect(
+                "select mzML files", options=[f.stem for f in sorted(mzML_dir.iterdir())]
+            )
+            c1, c2 = st.columns(2)
+            if c2.form_submit_button("Remove **selected**", use_container_width=True):
+                remove_selected_mzML_files(to_remove, params)
+                update_mzML_df(df_path, mzML_dir).to_csv(df_path, sep="\t", index=False)
+                st.rerun()
+
+            if c1.form_submit_button("⚠️ Remove **all**", use_container_width=True):
+                remove_all_mzML_files(params)
+                update_mzML_df(df_path, mzML_dir).to_csv(df_path, sep="\t", index=False)
+                st.rerun()

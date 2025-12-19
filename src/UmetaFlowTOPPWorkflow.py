@@ -1,4 +1,3 @@
-import streamlit as st
 from pathlib import Path
 from .workflow.WorkflowManager import WorkflowManager
 
@@ -15,7 +14,7 @@ from src.metabolomicsresults import *
 class Workflow(WorkflowManager):
     # Setup pages for upload, parameter, execution and results.
     # For layout use any streamlit components such as tabs (as shown in example), columns, or even expanders.
-    def __init__(self, workspace) -> None:
+    def __init__(self, workspace, enable_ui: bool = True) -> None:
         flag_file = Path(workspace, "umetaflow-expert-flag.txt")
 
         name = "UmetaFlow"
@@ -25,26 +24,40 @@ class Workflow(WorkflowManager):
             name = "UmetaFlow-Expert"
 
         # Initialize the parent class with the workflow name.
-        super().__init__(name, workspace)
+        super().__init__(name, workspace, enable_ui=enable_ui)
+        # Headless-safe runtime state (used when enable_ui=False)
+        self._runtime_state: dict[str, object] = {}
 
     def upload(self) -> None:
         return
 
-    def add_sirius_path_to_session_state(self):
-        if "sirius-path" not in st.session_state:
+    def _state_get(self, key: str, default=None):
+        if self.enable_ui:
+            import streamlit as st
+            return st.session_state.get(key, default)
+        return self._runtime_state.get(key, default)
+
+    def _state_set(self, key: str, value) -> None:
+        if self.enable_ui:
+            import streamlit as st
+            st.session_state[key] = value
+        else:
+            self._runtime_state[key] = value
+
+    def add_sirius_path_to_state(self) -> None:
+        if self._state_get("sirius-path", None) is None:
             possible_paths = [  # potential SIRIUS locations in increasing priority
                 str(Path("sirius")),  # anywhere
                 str(Path(sys.prefix, "bin", "sirius")),  # in current conda environment
-                str(
-                    Path(".", "sirius", "sirius.exe")
-                ),  # in case of Windows executables
+                str(Path(".", "sirius", "sirius.exe")),  # in case of Windows executables
             ]
-            st.session_state["sirius-path"] = ""
+            self._state_set("sirius-path", "")
             for path in possible_paths:
                 if shutil.which(path) is not None:
-                    st.session_state["sirius-path"] = path
+                    self._state_set("sirius-path", path)
 
     def configure_simple(self) -> None:
+        import streamlit as st
         cols = st.columns(4)
         with cols[0]:
             self.ui.input_widget(
@@ -204,9 +217,9 @@ class Workflow(WorkflowManager):
             with cols[1]:
                 st.image(str(Path("assets", "sirius.png")), width=200)
             # SiriusExport
-            self.add_sirius_path_to_session_state()
+            self.add_sirius_path_to_state()
 
-            if st.session_state["sirius-path"]:
+            if self._state_get("sirius-path", ""):
                 cols = st.columns([0.25, 0.25, 0.5])
                 with cols[0]:
                     self.ui.input_widget(
@@ -319,6 +332,7 @@ class Workflow(WorkflowManager):
                 st.image(str(Path("assets", "annotations.png")))
 
     def configure_expert(self) -> None:
+        import streamlit as st
         tabs = st.tabs(
             ["⚙️ **Pre-Processing**", "🔎 **Re-Quantification**", "🏷️ **Annotation**"]
         )
@@ -433,9 +447,9 @@ class Workflow(WorkflowManager):
                         help="Generate input files for SIRIUS from raw data and feature information using the OpenMS TOPP tool *SiriusExport*.",
                     )
                     self.ui.input_TOPP("SiriusExport")
-                self.add_sirius_path_to_session_state()
+                self.add_sirius_path_to_state()
 
-                if st.session_state["sirius-path"]:
+                if self._state_get("sirius-path", ""):
                     st.markdown("**SIRIUS user login**")
                     cols = st.columns([0.25, 0.25, 0.5])
                     with cols[0]:
@@ -963,8 +977,9 @@ class Workflow(WorkflowManager):
             )
             mzML = sorted(mzML)
 
-        self.add_sirius_path_to_session_state()
-        if st.session_state["sirius-path"]:
+        self.add_sirius_path_to_state()
+        sirius_path = str(self._state_get("sirius-path", "") or "")
+        if sirius_path:
             if (
                 self.params["run-sirius"]
                 or self.params["run-fingerid"]
@@ -977,11 +992,12 @@ class Workflow(WorkflowManager):
                     self.logger.log(
                         "WARNING: SIRIUS account info incomplete. SIRIUS will not be executed and features not annotated."
                     )
-                    st.session_state["sirius-path"] = ""
+                    self._state_set("sirius-path", "")
             else:
-                st.session_state["sirius-path"] = ""
+                self._state_set("sirius-path", "")
 
-        if self.params["export-sirius"] or st.session_state["sirius-path"]:
+        sirius_path = str(self._state_get("sirius-path", "") or "")
+        if self.params["export-sirius"] or sirius_path:
             self.logger.log("Exporting input files for SIRIUS.")
             sirius_ms_files = self.file_manager.get_files(mzML, "ms", "sirius-export")
             self.executor.run_topp(
@@ -992,11 +1008,12 @@ class Workflow(WorkflowManager):
                     "out": sirius_ms_files,
                 },
             )
-            if st.session_state["sirius-path"]:
+            sirius_path = str(self._state_get("sirius-path", "") or "")
+            if sirius_path:
                 self.logger.log("Logging in to SIRIUS...")
                 self.executor.run_command(
                     [
-                        st.session_state["sirius-path"],
+                        sirius_path,
                         "login",
                         f"--email={self.params['sirius-user-email']}",
                         f"--password={self.params['sirius-user-password']}",
@@ -1013,7 +1030,7 @@ class Workflow(WorkflowManager):
                     if Path(ms).stat().st_size > 0:
                         project.mkdir(parents=True)
                         command = [
-                            st.session_state["sirius-path"],
+                            sirius_path,
                             "--input",
                             ms,
                             "--project",
@@ -1177,7 +1194,7 @@ class Workflow(WorkflowManager):
                             },
                         )
 
-        if st.session_state["sirius-path"]:
+        if str(self._state_get("sirius-path", "") or ""):
             self.executor.run_python("annotate-sirius", {"in": consensus_df})
 
         if self.params["run-ms2query"]:
@@ -1200,6 +1217,7 @@ class Workflow(WorkflowManager):
         self.executor.run_python("zip-result-files", {"in": consensus_df})
 
     def results(self) -> None:
+        import streamlit as st
         # Set current results directory
         st.session_state.results_dir = Path(self.workflow_dir, "results")
 

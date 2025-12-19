@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}UmetaFlow · Run{% endblock %}
+
+{% block content %}
+  <div class="mb-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+    <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+      <div>
+        <h1 class="text-2xl font-extrabold tracking-tight">Run UmetaFlow</h1>
+        <p class="mt-1 text-slate-600">Starts the existing Python workflow headlessly and streams the logs here.</p>
+      </div>
+      <div class="flex items-center gap-3">
+        <span id="statusBadge"
+          class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ring-1
+            {% if running %} bg-amber-100 text-amber-700 ring-amber-300 {% else %} bg-emerald-100 text-emerald-700 ring-emerald-300 {% endif %}">
+          {% if running %}Running{% else %}Idle{% endif %}
+        </span>
+        <button id="startBtn" class="rounded-xl bg-brand-500 px-4 py-2 text-sm font-bold text-white hover:bg-brand-600">
+          Start workflow
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+    <div class="mb-3 flex items-center justify-between">
+      <h2 class="text-lg font-bold">Logs (minimal)</h2>
+      <div class="text-xs text-slate-500">Auto-refresh</div>
+    </div>
+    <pre id="logBox" class="h-[560px] overflow-auto rounded-xl border border-slate-200 bg-slate-50 p-4 text-xs text-slate-800">{{ log_text }}</pre>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const startBtn = document.getElementById('startBtn');
+  const logBox = document.getElementById('logBox');
+  const badge = document.getElementById('statusBadge');
+
+  function setRunning(running) {
+    badge.textContent = running ? "Running" : "Idle";
+    badge.className = "inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ring-1 " + (running
+      ? "bg-amber-100 text-amber-700 ring-amber-300"
+      : "bg-emerald-100 text-emerald-700 ring-emerald-300");
+  }
+
+  startBtn.addEventListener('click', async () => {
+    startBtn.disabled = true;
+    const res = await fetch('/api/workflow/start', { method: 'POST' });
+    await res.json();
+    startBtn.disabled = false;
+  });
+
+  async function poll() {
+    const res = await fetch('/api/workflow/status');
+    const data = await res.json();
+    setRunning(data.running);
+    if (typeof data.log === "string") {
+      const atBottom = (logBox.scrollTop + logBox.clientHeight) >= (logBox.scrollHeight - 8);
+      logBox.textContent = data.log;
+      if (atBottom) logBox.scrollTop = logBox.scrollHeight;
+    }
+  }
+
+  setInterval(poll, 2000);
+  poll();
+</script>
+{% endblock %}

@@ -24,6 +24,214 @@ from src.common.captcha_ import captcha_control
 OS_PLATFORM = sys.platform
 
 
+def inject_tailwind_flowbite_ui() -> None:
+    """
+    Inject a Tailwind/Flowbite-inspired modern UI layer into the Streamlit app.
+
+    Notes
+    - Streamlit does not support a traditional Tailwind build pipeline here.
+      We load Flowbite's prebuilt CSS and apply a custom design system on top
+      via CSS selectors + small helper classes for consistent layout.
+    - This function is safe to call multiple times (idempotent in practice).
+    """
+    # External stylesheets (Flowbite). Tailwind utility generation via CDN script
+    # is not reliably supported inside Streamlit, so we lean on Flowbite CSS +
+    # custom app CSS below.
+    st.markdown(
+        """
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+        <link href="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.5.2/flowbite.min.css" rel="stylesheet" />
+        <style>
+          :root{
+            --uf-bg: #0b1020;
+            --uf-bg2: #0f172a;          /* slate-900 */
+            --uf-card: rgba(17, 24, 39, 0.72); /* gray-900 @ 72% */
+            --uf-card-border: rgba(148, 163, 184, 0.16); /* slate-400 @ 16% */
+            --uf-text: #e5e7eb;         /* gray-200 */
+            --uf-muted: #94a3b8;        /* slate-400 */
+            --uf-brand: #6366f1;        /* indigo-500 */
+            --uf-brand2: #22d3ee;       /* cyan-400 */
+            --uf-success: #22c55e;      /* green-500 */
+            --uf-warning: #f59e0b;      /* amber-500 */
+            --uf-danger: #ef4444;       /* red-500 */
+            --uf-radius: 16px;
+          }
+
+          html, body, [class*="css"]  {
+            font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+          }
+
+          /* App background */
+          div[data-testid="stAppViewContainer"]{
+            background:
+              radial-gradient(1200px 600px at 10% 0%, rgba(99,102,241,0.25), rgba(0,0,0,0) 60%),
+              radial-gradient(1200px 600px at 90% 10%, rgba(34,211,238,0.18), rgba(0,0,0,0) 55%),
+              linear-gradient(180deg, var(--uf-bg) 0%, var(--uf-bg2) 100%);
+            color: var(--uf-text);
+          }
+
+          /* Remove Streamlit default menu/footer clutter */
+          #MainMenu {visibility: hidden;}
+          footer {visibility: hidden;}
+          header {visibility: hidden;}
+
+          /* Sidebar */
+          section[data-testid="stSidebar"]{
+            background: linear-gradient(180deg, rgba(17,24,39,0.85), rgba(15,23,42,0.95));
+            border-right: 1px solid rgba(148,163,184,0.12);
+          }
+          section[data-testid="stSidebar"] * { color: var(--uf-text); }
+          div[data-testid="stSidebarNav"]{
+            padding-top: 0.75rem;
+          }
+          div[data-testid="stSidebarNav"] ul li a{
+            border-radius: 12px;
+          }
+          div[data-testid="stSidebarNav"] ul li a:hover{
+            background: rgba(99,102,241,0.12);
+          }
+
+          /* Containers / cards */
+          .uf-card{
+            background: var(--uf-card);
+            border: 1px solid var(--uf-card-border);
+            border-radius: var(--uf-radius);
+            padding: 18px 18px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+          }
+          .uf-card + .uf-card{ margin-top: 14px; }
+          .uf-card h3{
+            margin: 0 0 6px 0;
+            font-size: 1.05rem;
+            font-weight: 700;
+          }
+          .uf-muted{ color: var(--uf-muted); }
+
+          /* Streamlit "border=True" containers */
+          div[data-testid="stVerticalBlockBorderWrapper"]{
+            background: var(--uf-card) !important;
+            border: 1px solid var(--uf-card-border) !important;
+            border-radius: var(--uf-radius) !important;
+          }
+
+          /* Buttons */
+          .stButton>button, .stDownloadButton>button{
+            border-radius: 14px !important;
+            border: 1px solid rgba(148,163,184,0.18) !important;
+            background: linear-gradient(135deg, rgba(99,102,241,0.95), rgba(34,211,238,0.55)) !important;
+            color: #061021 !important;
+            font-weight: 700 !important;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.25);
+            transition: transform .05s ease, filter .15s ease;
+          }
+          .stButton>button:hover, .stDownloadButton>button:hover{
+            filter: brightness(1.02);
+            transform: translateY(-1px);
+          }
+          .stButton>button:active, .stDownloadButton>button:active{
+            transform: translateY(0px);
+          }
+
+          /* Inputs */
+          .stTextInput input, .stTextArea textarea, .stNumberInput input,
+          div[data-baseweb="select"] > div, .stMultiSelect div[data-baseweb="select"] > div{
+            border-radius: 14px !important;
+            border: 1px solid rgba(148,163,184,0.18) !important;
+            background: rgba(2, 6, 23, 0.35) !important;
+          }
+          .stTextInput input:focus, .stTextArea textarea:focus, .stNumberInput input:focus{
+            outline: none !important;
+            border-color: rgba(99,102,241,0.55) !important;
+            box-shadow: 0 0 0 4px rgba(99,102,241,0.16) !important;
+          }
+
+          /* Tabs */
+          button[data-baseweb="tab"]{
+            border-radius: 14px 14px 0 0 !important;
+          }
+          button[data-baseweb="tab"][aria-selected="true"]{
+            background: rgba(99,102,241,0.18) !important;
+            border-bottom: 2px solid rgba(99,102,241,0.85) !important;
+          }
+
+          /* Code blocks */
+          pre{
+            border-radius: 14px !important;
+            border: 1px solid rgba(148,163,184,0.16) !important;
+            background: rgba(2, 6, 23, 0.55) !important;
+          }
+
+          /* Page header helper */
+          .uf-page-header{
+            margin: 6px 0 14px 0;
+            padding: 18px 18px;
+            border-radius: var(--uf-radius);
+            background:
+              radial-gradient(900px 220px at 10% 50%, rgba(99,102,241,0.28), rgba(0,0,0,0) 60%),
+              radial-gradient(900px 220px at 90% 30%, rgba(34,211,238,0.16), rgba(0,0,0,0) 55%),
+              rgba(17,24,39,0.60);
+            border: 1px solid rgba(148,163,184,0.16);
+          }
+          .uf-page-title{
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            gap: 14px;
+          }
+          .uf-page-title h1{
+            margin: 0;
+            font-size: 1.75rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+          }
+          .uf-page-subtitle{
+            margin-top: 6px;
+            color: var(--uf-muted);
+            font-size: 1rem;
+            line-height: 1.4;
+          }
+          .uf-badges{ display:flex; gap: 8px; flex-wrap: wrap; }
+          .uf-badge{
+            display:inline-flex;
+            align-items:center;
+            gap: 6px;
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: rgba(2, 6, 23, 0.35);
+            border: 1px solid rgba(148,163,184,0.16);
+            color: var(--uf-text);
+            font-size: 0.85rem;
+            font-weight: 600;
+          }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def page_header(title: str, subtitle: str = "", badges: list[str] | None = None) -> None:
+    """Render a consistent, Flowbite-inspired header block for each page."""
+    if badges is None:
+        badges = []
+    badges_html = "".join([f'<span class="uf-badge">{b}</span>' for b in badges])
+    st.markdown(
+        f"""
+        <div class="uf-page-header">
+          <div class="uf-page-title">
+            <div>
+              <h1>{title}</h1>
+              {f'<div class="uf-page-subtitle">{subtitle}</div>' if subtitle else ''}
+            </div>
+            <div class="uf-badges">{badges_html}</div>
+          </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
 def load_params(default: bool = False) -> dict[str, Any]:
     """
     Load parameters from a JSON file and return a dictionary containing them.
@@ -112,6 +320,9 @@ def page_setup(page: str = "") -> dict[str, Any]:
         initial_sidebar_state="auto",
         menu_items=None,
     )
+
+    # Modern Tailwind/Flowbite-inspired styling (global)
+    inject_tailwind_flowbite_ui()
 
     # Expand sidebar navigation
     st.markdown(

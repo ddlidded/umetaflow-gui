@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+
+{% block title %}UmetaFlow · Statistics{% endblock %}
+
+{% block content %}
+  <div class="mb-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+    <div class="flex items-end justify-between">
+      <div>
+        <h1 class="text-2xl font-extrabold tracking-tight">UmetaFlow Statistics</h1>
+        <p class="mt-1 text-slate-600">Comprehensive analysis of your metabolomics results.</p>
+      </div>
+      <div class="flex items-center gap-3">
+        <a href="/results" class="rounded-xl bg-slate-100 px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-200">Back to Results</a>
+      </div>
+    </div>
+  </div>
+
+  {% if not results_exist %}
+    <div class="rounded-2xl border border-slate-200 bg-white p-8 text-center">
+      <div class="mx-auto max-w-md">
+        <svg class="mx-auto h-12 w-12 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+        <h3 class="mt-4 text-lg font-medium text-slate-900">No results yet</h3>
+        <p class="mt-2 text-sm text-slate-500">Run the UmetaFlow workflow first to generate statistics.</p>
+        <div class="mt-6">
+          <a href="/run" class="rounded-xl bg-brand-500 px-4 py-2 text-sm font-bold text-white hover:bg-brand-600">Run Workflow</a>
+        </div>
+      </div>
+    </div>
+  {% else %}
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <!-- Overview Statistics -->
+      <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 class="text-lg font-bold">Overview</h2>
+        <div class="mt-4 grid grid-cols-2 gap-4">
+          <div class="rounded-xl bg-blue-50 p-4">
+            <div class="text-2xl font-bold text-blue-600">{{ stats.total_features }}</div>
+            <div class="text-sm text-blue-800">Total Features</div>
+          </div>
+          <div class="rounded-xl bg-green-50 p-4">
+            <div class="text-2xl font-bold text-green-600">{{ stats.annotated_features }}</div>
+            <div class="text-sm text-green-800">Annotated</div>
+          </div>
+          <div class="rounded-xl bg-purple-50 p-4">
+            <div class="text-2xl font-bold text-purple-600">{{ stats.ms2_matches }}</div>
+            <div class="text-sm text-purple-800">MS2 Matches</div>
+          </div>
+          <div class="rounded-xl bg-orange-50 p-4">
+            <div class="text-2xl font-bold text-orange-600">{{ stats.sirius_annotations }}</div>
+            <div class="text-sm text-orange-800">SIRIUS Annotations</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quality Metrics -->
+      <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 class="text-lg font-bold">Quality Metrics</h2>
+        <div class="mt-4 space-y-3">
+          <div class="flex justify-between">
+            <span class="text-sm text-slate-600">Average CV</span>
+            <span class="font-semibold">{{ stats.avg_cv | round(2) }}%</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-sm text-slate-600">Missing Values</span>
+            <span class="font-semibold">{{ stats.missing_values | round(2) }}%</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-sm text-slate-600">RSD</span>
+            <span class="font-semibold">{{ stats.rsd | round(2) }}%</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-sm text-slate-600">Signal-to-Noise</span>
+            <span class="font-semibold">{{ stats.snr | round(2) }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Distribution Charts -->
+      <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm lg:col-span-2">
+        <h2 class="text-lg font-bold">Distributions</h2>
+        <div class="mt-4 grid grid-cols-1 gap-6 md:grid-cols-2">
+          <div>
+            <h3 class="mb-2 text-sm font-semibold text-slate-700">m/z Distribution</h3>
+            <div class="h-48 rounded-lg bg-slate-50 p-4">
+              <p class="text-center text-sm text-slate-500">m/z histogram chart would be displayed here</p>
+            </div>
+          </div>
+          <div>
+            <h3 class="mb-2 text-sm font-semibold text-slate-700">RT Distribution</h3>
+            <div class="h-48 rounded-lg bg-slate-50 p-4">
+              <p class="text-center text-sm text-slate-500">Retention time histogram chart would be displayed here</p>
+            </div>
+          </div>
+          <div>
+            <h3 class="mb-2 text-sm font-semibold text-slate-700">Intensity Distribution</h3>
+            <div class="h-48 rounded-lg bg-slate-50 p-4">
+              <p class="text-center text-sm text-slate-500">Intensity histogram chart would be displayed here</p>
+            </div>
+          </div>
+          <div>
+            <h3 class="mb-2 text-sm font-semibold text-slate-700">CV Distribution</h3>
+            <div class="h-48 rounded-lg bg-slate-50 p-4">
+              <p class="text-center text-sm text-slate-500">CV histogram chart would be displayed here</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Annotation Statistics -->
+      <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm lg:col-span-2">
+        <h2 class="text-lg font-bold">Annotation Summary</h2>
+        <div class="mt-4 grid grid-cols-1 gap-6 md:grid-cols-3">
+          <div class="rounded-xl bg-slate-50 p-4">
+            <h3 class="text-sm font-semibold text-slate-700">MS2 Matching</h3>
+            <div class="mt-2 text-2xl font-bold text-slate-900">{{ stats.ms2_matches }}</div>
+            <div class="text-xs text-slate-500">spectral matches</div>
+          </div>
+          <div class="rounded-xl bg-slate-50 p-4">
+            <h3 class="text-sm font-semibold text-slate-700">SIRIUS</h3>
+            <div class="mt-2 text-2xl font-bold text-slate-900">{{ stats.sirius_formulas }}</div>
+            <div class="text-xs text-slate-500">formula predictions</div>
+          </div>
+          <div class="rounded-xl bg-slate-50 p-4">
+            <h3 class="text-sm font-semibold text-slate-700">CSI:FingerID</h3>
+            <div class="mt-2 text-2xl font-bold text-slate-900">{{ stats.csi_annotations }}</div>
+            <div class="text-xs text-slate-500">structure predictions</div>
+          </div>
+          <div class="rounded-xl bg-slate-50 p-4">
+            <h3 class="text-sm font-semibold text-slate-700">CANOPUS</h3>
+            <div class="mt-2 text-2xl font-bold text-slate-900">{{ stats.canopus_annotations }}</div>
+            <div class="text-xs text-slate-500">class predictions</div>
+          </div>
+          <div class="rounded-xl bg-slate-50 p-4">
+            <h3 class="text-sm font-semibold text-slate-700">MS2Query</h3>
+            <div class="mt-2 text-2xl font-bold text-slate-900">{{ stats.ms2query_matches }}</div>
+            <div class="text-xs text-slate-500">analogue matches</div>
+          </div>
+          <div class="rounded-xl bg-slate-50 p-4">
+            <h3 class="text-sm font-semibold text-slate-700">Adduct Detection</h3>
+            <div class="mt-2 text-2xl font-bold text-slate-900">{{ stats.adduct_groups }}</div>
+            <div class="text-xs text-slate-500">adduct groups</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Download Reports -->
+    <div class="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+      <h2 class="text-lg font-bold">Download Reports</h2>
+      <div class="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3">
+        <a href="/api/statistics/download/summary" class="rounded-xl border border-slate-200 bg-white p-4 text-center hover:bg-slate-50">
+          <svg class="mx-auto h-8 w-8 text-brand-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+          <h3 class="mt-2 text-sm font-semibold">Summary Report</h3>
+          <p class="text-xs text-slate-500">PDF Summary</p>
+        </a>
+        <a href="/api/statistics/download/full" class="rounded-xl border border-slate-200 bg-white p-4 text-center hover:bg-slate-50">
+          <svg class="mx-auto h-8 w-8 text-brand-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+          <h3 class="mt-2 text-sm font-semibold">Full Report</h3>
+          <p class="text-xs text-slate-500">PDF Detailed</p>
+        </a>
+        <a href="/api/statistics/download/csv" class="rounded-xl border border-slate-200 bg-white p-4 text-center hover:bg-slate-50">
+          <svg class="mx-auto h-8 w-8 text-brand-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+          <h3 class="mt-2 text-sm font-semibold">CSV Data</h3>
+          <p class="text-xs text-slate-500">CSV Export</p>
+        </a>
+      </div>
+    </div>
+  {% endif %}
+{% endblock %}
